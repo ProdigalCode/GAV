@@ -7,7 +7,7 @@ var livereload = require('gulp-livereload');
 // Basic usage
 gulp.task('scripts', function() {
     // Single entry point to browserify
-    gulp.src('scripts/app.js')
+    gulp.src('scripts/main.js')
         .pipe(browserify({
           debug : true,
         }).on('error', gutil.log))

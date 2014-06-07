@@ -1,3 +1,48 @@
+/**
+ * Function makes a node
+ * @param that
+ * @param name
+ * @param d
+ * @returns {{type: *, name: *, nodeValue: *}}
+ * @constructor
+ */
+function Node(that, name, d) {
+    that.name = name;
+    that.nodeValue = d;
+}
+
+function FromNode(name, d) {
+    Node(this, name, d);
+}
+
+function ToNode(name, d) {
+    Node(this, name, d);
+}
+
+function IProvider() {
+    return {
+        signIn : function() {
+
+        }
+        , signOut : function () {
+
+        }
+        , getAccount : function () {
+
+        }
+        , getProperty : function () {
+
+        }
+        , getView : function () {
+
+        }
+        , parse : function() {
+            return [];
+        }
+    }
+}
+
+
 var CLIENT_ID = '125867639228-55svp06ntafe8b2uf27m7llvk2ernk3s.apps.googleusercontent.com'
     , SCOPES = 'https://www.googleapis.com/auth/analytics.readonly'
     , MaxResults = 1000000000
@@ -5,13 +50,12 @@ var CLIENT_ID = '125867639228-55svp06ntafe8b2uf27m7llvk2ernk3s.apps.googleuserco
 
 module.exports = function(callback) {
     var script = document.createElement('script');
-    script.src = "https://apis.google.com/js/client.js";
-    script.onload = handleClientLoad;
+    window.LOADERAPI = handleClientLoad;
+    script.src = "https://apis.google.com/js/client.js?onload=LOADERAPI";
     script.onerror = console.log.bind(console, 'error');
     document.body.appendChild(script);
 
     function handleClientLoad() {
-        console.log(callback);
         callback && callback(new GAClient(CLIENT_ID));
     }
 };
@@ -158,17 +202,19 @@ var GAClient = function(key) {
     proto.reports = {
         social : function(profileId, datebegin, dateend, callback) {
             var act = 'reports.social';
-            proto.on(act, callback);
-            report('ga:dateHour,ga:fullReferrer,ga:sourceMedium,ga:browser,ga:country,ga:socialNetwork,ga:pagePath',
+            //proto.on(act, wrapperParser(parserSocial, callback));
+
+            wrapperParser(parserSocial, callback)(null, require('./data'));
+            /*report('ga:dateHour,ga:fullReferrer,ga:sourceMedium,ga:browser,ga:country,ga:socialNetwork,ga:pagePath',
                 profileId,
                 datebegin,
                 dateend,
                 handle(act)
-            );
+            );*/
         },
         geo : function(datebegin, dateend, callback) {
             var act = 'reports.geo';
-            proto.on(act, callback);
+            proto.on(act, wrapperParser(parserSocial, callback));
             report('ga:dateHour,ga:fullReferrer,ga:country,ga:pagePath,ga:city,ga:latitude,ga:longitude',
                 profileId,
                 datebegin,
@@ -176,5 +222,52 @@ var GAClient = function(key) {
                 handle(act)
             );
         }
+    };
+
+    function wrapperParser(parser, callback) {
+        return function (err, data) {
+            callback && callback(err, parser(data));
+        }
+    }
+
+    function parserSocial(data) {
+        if (!data || !data[0] || !(data = data[0].result) || !data.rows)
+            return [];
+
+        var rows = data.rows
+            , l = rows.length
+            , d
+            , res = []
+            , from = {}
+            , to = {}
+            ;
+
+        var fr, sm, b, c, sn;
+
+        while(--l > -1) {
+            d = rows[l];
+            fr = d[1];
+            sm = d[2];
+            b = d[3];
+            c = d[4];
+            sn = d[5];
+            res.push({
+                date : parseInt(d[0])
+                , from : {
+                    fullReferrer : from[fr] || (from[fr] = new FromNode(fr, fr))
+                    , sourceMedium  : from[sm] || (from[sm] = new FromNode(sm, sm))
+                    , browser  : from[b] || (from[b] = new FromNode(b, b))
+                    , country  : from[c] || (from[c] = new FromNode(c, c))
+                    , socialNetwork  : from[sn] || (from[sn] = new FromNode(sn, sn))
+                }
+                , to : {
+                    pagePath : to[d[6]] || (to[d[6]] = new ToNode(d[6], d[6]))
+                }
+                , amount : parseInt(d[7])
+                , weight : parseFloat(d[8])
+            });
+        }
+
+        return res.reverse();
     }
 })(GAClient.prototype);

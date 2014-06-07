@@ -378,8 +378,8 @@ function resize() {
     graphic.size = size;
     physics.size(size);
 
-    ui.from.style('height', size[1]);
-    ui.to.style('height', size[1]);
+    ui.from.style('height', size[1] + 'px');
+    ui.to.style('height', size[1] + 'px');
 
     updateParent(ui.from, state.hashFrom);
     updateParent(ui.to, state.hashTo);

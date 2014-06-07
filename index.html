@@ -10,9 +10,15 @@
 <body>
     <header>
         <ul id="topMenu">
-            <li><label for="accounts">Account: </label><span>Select...</span><ul id="accounts" class="sub"></ul></li>
-            <li><label for="webProperties">Web Property: </label><span>Select...</span><ul id="webProperties" class="sub"></ul></li>
-            <li><label for="profiles">View: </label><span>Select...</span><ul id="profiles" class="sub"></ul></li>
+            <li><label for="accounts">Account: </label><select id="accounts">
+                <option value="-1" disabled="disabled">Select...</option>
+            </select></li>
+            <li><label for="webProperties">Web Property: </label><select id="webProperties">
+                <option value="-1" disabled="disabled">Select...</option>
+            </select></li>
+            <li><label for="profiles">View: </label><select id="profiles">
+                <option value="-1" disabled="disabled">Select...</option>
+            </select></li>
             <li>
                 <button id="run">Run</button>
             </li>

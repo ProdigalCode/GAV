@@ -1,5 +1,18 @@
 #topMenu {
     list-style: none;
+    margin: 0;
+    background: #ccc;
+    border: 1px solid #eee;
+    border-radius: 1px;
+    overflow: hidden;
+    padding: 3px;
+    padding-left: 8px;
+    text-shadow: 1px 1px #f9f9f9;
+}
+
+#topMenu input {
+    padding: 0;
+    margin: 0;
 }
 
 #topMenu > li {
@@ -63,6 +76,13 @@
 
 #to {
     float: right;
+}
+
+#canvas ul li {
+    text-overflow: ellipsis;
+    max-width: 150px;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 canvas {

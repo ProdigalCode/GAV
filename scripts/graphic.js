@@ -153,7 +153,7 @@ render.draw = function(nodes) {
     /*bufCtx.translate(lastEvent.translate[0], lastEvent.translate[1]);
     bufCtx.scale(lastEvent.scale, lastEvent.scale);*/
 
-    bufCtx.globalCompositeOperation = 'source-over';
+    //bufCtx.globalCompositeOperation = 'source-over';
 
     cn = cn || (nodes || [])
         .sort(sortByOpacity)

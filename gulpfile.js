@@ -9,7 +9,7 @@ gulp.task('scripts', function() {
     // Single entry point to browserify
     gulp.src('scripts/main.js')
         .pipe(browserify({
-          debug : true,
+          debug : true
         }).on('error', gutil.log))
         .pipe(gulp.dest('./build'))
         .pipe(livereload());

@@ -46,7 +46,7 @@ function singIn(prd) {
     provider.on('signIn', handleSignIn);
     //provider.signIn()
     ui.buttons.run.on('click')();
-
+    resize();
 }
 
 function keyItem(d) {
@@ -148,7 +148,7 @@ var state = {
 function ofSize(d) {
     return {
         valueOf : function() {
-            return 25;//state.sizes(d.weight);
+            return 16;//state.sizes(d.weight);
         }
     }
 }
@@ -170,8 +170,49 @@ function initNode(d) {
     }
 }
 
-function updateParent(ui, hash) {
+function keyHash(d) {
+    return d.key;
+}
 
+function liXl(li) {
+    return {
+        valueOf : function() {
+            var rect = li.getBoundingClientRect();
+            return rect.right;
+        }
+    };
+}
+
+function liXr(li) {
+    return {
+        valueOf : function() {
+            var rect = li.getBoundingClientRect();
+            return rect.left - 15;
+        }
+    };
+}
+
+function liY(li) {
+    return {
+        valueOf : function() {
+            //li.offsetTop + li.parentNode.offsetTop + li
+            var rect = li.getBoundingClientRect();
+            return (rect.top + rect.height) / 2;
+        }
+    };
+}
+
+function updateParent(ui, hash) {
+    var lis = ui.selectAll('li')
+        .data(hash.entries(), keyHash);
+
+    lis.enter().append('li')
+        .text(keyHash)
+        .each(function(d) {
+            d = d.value;
+            d.x = hash === state.hashFrom ? liXl(this) : liXr(this);
+            d.y = liY(this);
+        });
 }
 
 function refresh(data) {
@@ -191,6 +232,7 @@ function refresh(data) {
     processor.bounds([lb, rb]);
 
     !processor.IsRun() && processor.start();
+
 }
 
 ui.buttons.run.on('click', function() {
@@ -222,7 +264,8 @@ processor.on('finish', function() {
 });
 
 processor.on('tick', function(items, l, r) {
-
+    updateParent(ui.from, state.hashFrom);
+    updateParent(ui.to, state.hashTo);
 });
 
 processor.on('calc', function (d) {
@@ -334,6 +377,12 @@ function resize() {
 
     graphic.size = size;
     physics.size(size);
+
+    ui.from.style('height', size[1]);
+    ui.to.style('height', size[1]);
+
+    updateParent(ui.from, state.hashFrom);
+    updateParent(ui.to, state.hashTo);
 }
 
 d3.select(window).on('resize', resize);

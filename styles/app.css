@@ -53,6 +53,8 @@
     overflow: hidden;
     list-style: none;
     overflow-y: auto;
+    background: rgba(244, 244, 244, .5);
+    padding: 10px;
 }
 
 #from {
@@ -68,4 +70,12 @@ canvas {
     top: 0;
     left: 0;
     background: black;
+    z-index: -1;
+}
+
+header {
+    position: absolute;
+    z-index: 2;
+    top: 5px;
+    left: 5px;
 }

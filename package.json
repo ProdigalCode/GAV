@@ -10,10 +10,6 @@
     "gulp-livereload": "^2.0.0",
     "gulp-util": "^2.2.16"
   },
-  "repository": {
-    "type": "git",
-    "url": "git@bitbucket.org:lavrton/trips-application.git"
-  },
   "author": "",
   "license": "ISC"
 }

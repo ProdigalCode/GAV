@@ -20,7 +20,6 @@ function tick() {
 }
 
 function cluster(alpha) {
-
     return function(d) {
         if (!d.parent || !d.visible)
             return;
@@ -32,7 +31,11 @@ function cluster(alpha) {
             , y
             ;
 
-        if (node == d) return;
+        if (node === d) return;
+
+        !d.alive && d.opacity > 0 && (d.opacity -= .3);
+        d.opacity = d.opacity > 0 ? d.opacity : 0;
+        d.visible = !!d.opacity;
 
         x = d.x - node.x;
         y = d.y - node.y;
@@ -45,6 +48,12 @@ function cluster(alpha) {
 
             d.x -= x;
             d.y -= y;
+        }
+        if (d.alive && r >= l) {
+            d.alive = false;
+            d.parent.visitors++;
+            if(d.parent.links-- < 0)
+                d.parent.links = 0;
         }
     };
 }

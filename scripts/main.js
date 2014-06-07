@@ -3,6 +3,7 @@ var d3 = require('d3')
     , processor = require('./processor')
     , physics = require('./physics')
     , graphic = require('./graphic')
+    , prbr = require('./prbr')
     ;
 
 function log(label, data) {
@@ -197,9 +198,34 @@ function liY(li) {
         valueOf : function() {
             //li.offsetTop + li.parentNode.offsetTop + li
             var rect = li.getBoundingClientRect();
-            return (rect.top + rect.height) / 2;
+            return (rect.top + rect.height) / 2 + 55;
         }
     };
+}
+
+function sortFrom(a, b) {
+    return d3.ascending(b.visitors, a.visitors);
+}
+
+function sortTo(b, a) {
+    return d3.ascending(b.links, a.links);
+}
+
+function getVisitors(d) {
+    d = d.key ? d.value : d;
+    return d.visitors || 0;
+}
+
+function getSpanColor(d) {
+    return state.colors(d.value.name);
+}
+
+function getBolderColor(d) {
+    return d3.rgb(getSpanColor(d)).brighter().brighter();
+}
+
+function sortFun(a, b) {
+    return d3.ascending(a.value.visitors, b.value.visitors);
 }
 
 function updateParent(ui, hash) {
@@ -207,12 +233,20 @@ function updateParent(ui, hash) {
         .data(hash.entries(), keyHash);
 
     lis.enter().append('li')
-        .text(keyHash)
         .each(function(d) {
             d = d.value;
             d.x = hash === state.hashFrom ? liXl(this) : liXr(this);
             d.y = liY(this);
+            d3.select(this).html(hash === state.hashFrom ? (d.name + ' <span>' + getVisitors(d) + '</span>') : ('<span>' + getVisitors(d) + '</span> ' + d.name));
         });
+
+    ui.selectAll('li>span')
+        .datum(function() {
+            return this.parentNode.__data__;
+        })
+        .style('background', getSpanColor)
+        .style('bolder-color', getBolderColor)
+        .text(getVisitors);
 }
 
 function refresh(data) {
@@ -232,6 +266,22 @@ function refresh(data) {
     processor.bounds([lb, rb]);
 
     !processor.IsRun() && processor.start();
+
+    progress.data(d3.nest()
+        .key(function (d) {
+            return d.date
+        })
+        .rollup(function (leaves) {
+            return {
+                count : d3.sum(leaves, function(d) {
+                    return d.amount;
+                }),
+                sum : d3.sum(leaves, function (d) {
+                    return d.weight;
+                })
+            };
+        })
+        .entries(state.data));
 
 }
 
@@ -266,6 +316,7 @@ processor.on('finish', function() {
 processor.on('tick', function(items, l, r) {
     updateParent(ui.from, state.hashFrom);
     updateParent(ui.to, state.hashTo);
+    progress.inc(l, r);
 });
 
 processor.on('calc', function (d) {
@@ -277,19 +328,27 @@ processor.on('calc', function (d) {
     if (d.fixed) {
         d.x = +p.x;
         d.y = +p.y;
+        d.alive = true;
+        d.opacity = 100;
+        p.visitors = p.visitors || 0;
+        p.visitors++;
     }
 
     d.fixed = false;
 
     d.parent = d.to.pagePath;
+    d.parent.visitors = d.parent.visitors || 0;
+    d.parent.links = d.parent.links || 0;
+    d.parent.links++;
 
     d.visible = getVisible(d);
 
     physics && physics.nodes(state.data.filter(filterChild)).start();
 });
 
+var temp = 120;
 processor.on('calcrightbound', function(l) {
-    processor.leftBound++;
+    processor.leftBound += temp;
 });
 
 processor.on('filter', function(l, r) {
@@ -299,7 +358,7 @@ processor.on('filter', function(l, r) {
 });
 
 function getVisible(d) {
-    return true;
+    return !!d.opacity;
 }
 
 function filterChild(d) {
@@ -378,8 +437,10 @@ function resize() {
     graphic.size = size;
     physics.size(size);
 
-    ui.from.style('height', size[1] + 'px');
-    ui.to.style('height', size[1] + 'px');
+    progress.size(size[0], 100);
+
+    ui.from.style('height', (size[1] - 185) + 'px');
+    ui.to.style('height', (size[1] - 185) + 'px');
 
     updateParent(ui.from, state.hashFrom);
     updateParent(ui.to, state.hashTo);
@@ -387,5 +448,17 @@ function resize() {
 
 d3.select(window).on('resize', resize);
 
+var progress = prbr(d3.select('#barcont'), 0, 0)
+    .on('getAxisXValue', function (d) {
+        return d.key;
+    })
+    .on('getAxisYValue', function (d) {
+        return +d.values.sum;
+    })
+    .on('getAxisYEvent', function (d) {
+        return +d.values.count;
+    })
+    .maxLabelValue('Максимьное кол-во визитеров день: ')
+    .maxLabelEvent('Максимьное кол-во времени день: ');
 
 gaapi(singIn);

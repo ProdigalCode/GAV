@@ -251,21 +251,28 @@ var GAClient = function(key) {
             b = d[3];
             c = d[4];
             sn = d[5];
-            res.push({
-                date : parseInt(d[0])
-                , from : {
-                    fullReferrer : from[fr] || (from[fr] = new FromNode(fr, fr))
-                    , sourceMedium  : from[sm] || (from[sm] = new FromNode(sm, sm))
-                    , browser  : from[b] || (from[b] = new FromNode(b, b))
-                    , country  : from[c] || (from[c] = new FromNode(c, c))
-                    , socialNetwork  : from[sn] || (from[sn] = new FromNode(sn, sn))
-                }
-                , to : {
-                    pagePath : to[d[6]] || (to[d[6]] = new ToNode(d[6], d[6]))
-                }
-                , amount : parseInt(d[7])
-                , weight : parseFloat(d[8])
-            });
+
+            
+            var amout =  parseInt(d[7]);
+            var hours = parseInt(d[0] + '00');
+            for (var i = 0; i < amout; i++) {
+                
+                res.push({
+                    date : hours + Math.floor(i / amout * 60)
+                    , from : {
+                        fullReferrer : from[fr] || (from[fr] = new FromNode(fr, fr))
+                        , sourceMedium  : from[sm] || (from[sm] = new FromNode(sm, sm))
+                        , browser  : from[b] || (from[b] = new FromNode(b, b))
+                        , country  : from[c] || (from[c] = new FromNode(c, c))
+                        , socialNetwork  : from[sn] || (from[sn] = new FromNode(sn, sn))
+                    }
+                    , to : {
+                        pagePath : to[d[6]] || (to[d[6]] = new ToNode(d[6], d[6]))
+                    }
+                    , amount : parseInt(d[7])
+                    , weight : parseFloat(d[8])
+                });
+            }
         }
 
         return res.reverse();

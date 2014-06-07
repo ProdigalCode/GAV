@@ -45,8 +45,7 @@ function singIn(prd) {
     if (!provider)
         return;
     provider.on('signIn', handleSignIn);
-    //provider.signIn()
-    ui.buttons.run.on('click')();
+    provider.signIn();
     resize();
 }
 
@@ -66,7 +65,7 @@ function handle(sel_prop, ui_prop, css_class, click_fn) {
         var items = ui[ui_prop].selectAll(css_class)
             .data(data, keyItem);
         items.enter()
-            .append('li')
+            .append('option')
             .attr('class', css_class.substr(1))
             .text(function(d) {
                 return d.name;
@@ -74,25 +73,27 @@ function handle(sel_prop, ui_prop, css_class, click_fn) {
             .on('click', click_fn)
             .each(function(d) {
                 prop
-                && prop.id == d.id
-                && click_fn.call(this, prop);
+                && prop.id === d.id
+                && (d3.select(this).attr('selected', 'selected'))
+                && click_fn.call(ui[ui_prop].node(), prop);
             });
         items.exit().remove();
+        ui[ui_prop].on('chanege', click_fn);
     }
 }
 
 function clickTopMenu(click_fn) {
     return function(d) {
-        d3.select(this.parentNode)
+        /*d3.select(this.parentNode)
             .selectAll('li')
-            .classed('uiSelected', false);
-        d3.select(this.parentNode.parentNode)
+            .classed('uiSelected', false);*/
+        /*d3.select(this.parentNode.parentNode)
             .select('span').text(d.name);
         d3.select(this)
-            .classed('uiSelected', true);
-
+            .classed('uiSelected', true);*/
         click_fn &&
-        click_fn(d);
+        this.selectedIndex &&
+        click_fn(this[this.selectedIndex].__data__);
     }
 }
 
@@ -286,7 +287,11 @@ function refresh(data) {
 }
 
 ui.buttons.run.on('click', function() {
-    provider.reports.social(/*uiSelected.profile.id*/'111', '2014-03-01', '2014-03-30', function(err, data) {
+
+    if (!uiSelected.profile)
+        return;
+
+    provider.reports.social(uiSelected.profile.id, '2014-03-01', '2014-03-30', function(err, data) {
         if (err) {
             logError(err);
             return;

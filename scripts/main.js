@@ -84,7 +84,6 @@ function handle(sel_prop, ui_prop, css_class, click_fn) {
 
 function clickTopMenu(click_fn) {
     return function(d) {
-        console.log(12);
         click_fn &&
         this.selectedIndex &&
         click_fn(this[this.selectedIndex].__data__);
@@ -223,6 +222,16 @@ function sortFun(a, b) {
     return d3.ascending(a.value.visitors, b.value.visitors);
 }
 
+function redrawCounters(ui, hash) {
+    ui.selectAll('li>span')
+        .datum(function() {
+            return this.parentNode.__data__;
+        })
+        .style('background', getSpanColor)
+        .style('bolder-color', getBolderColor)
+        .text(getVisitors);
+}
+
 function updateParent(ui, hash) {
     var lis = ui.selectAll('li')
         .data(hash.entries(), keyHash);
@@ -235,13 +244,16 @@ function updateParent(ui, hash) {
             d3.select(this).html(hash === state.hashFrom ? (d.name + ' <span>' + getVisitors(d) + '</span>') : ('<span>' + getVisitors(d) + '</span> ' + d.name));
         });
 
-    ui.selectAll('li>span')
-        .datum(function() {
-            return this.parentNode.__data__;
-        })
-        .style('background', getSpanColor)
-        .style('bolder-color', getBolderColor)
-        .text(getVisitors);
+    
+
+    var height = 0;
+    ui.selectAll('li').each(function() {
+        height += this.getBoundingClientRect().height;
+    });
+    var padding = Math.max(0, (parseInt(ui.style('height')) - height) / 2);
+    ui.style('padding-top', padding + 'px');
+
+    ui.style('height', (size[1] - 185 - padding) + 'px');
 }
 
 function refresh(data) {
@@ -322,8 +334,8 @@ processor.on('finish', function() {
 });
 
 processor.on('tick', function(items, l, r) {
-    updateParent(ui.from, state.hashFrom);
-    updateParent(ui.to, state.hashTo);
+    redrawCounters(ui.from, state.hashFrom);
+    redrawCounters(ui.to, state.hashTo);
     progress.inc(l, r);
 });
 
@@ -448,8 +460,8 @@ function resize() {
 
     progress.size(size[0], 100);
 
-    ui.from.style('height', (size[1] - 185) + 'px');
-    ui.to.style('height', (size[1] - 185) + 'px');
+    // ui.from.style('height', (size[1] - 185) + 'px');
+    // ui.to.style('height', (size[1] - 185) + 'px');
 
     updateParent(ui.from, state.hashFrom);
     updateParent(ui.to, state.hashTo);

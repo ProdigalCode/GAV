@@ -487,17 +487,21 @@ var progress = prbr(d3.select('#barcont'), 0, 0)
 gaapi(singIn);
 
 
+var explosion = new Image();
+explosion.src = 'images/explosion.gif';
+
 window.onhashchange = function () {
     var number = parseInt(window.location.hash.slice(1));
     updateParent = function(ui, hash) {
         if (hash === state.hashFrom) {
             ui.selectAll('li').html('<img src="images/gun.png" style="width:30;height:30px;">');
         } else {
-            ui.selectAll('li').html('<img src="images/screem.png" style="width:30;height:30px;">');
+            ui.selectAll('li').each(function(d) {
+                d3.select(this).html('<img src="images/screem.png" style="width:30;height:30px;"><span>' + d.value.name + '</span>');
+            });
         }
     }
     redrawCounters = function(ui, hash) {
-        // console.log(1);
         if (hash === state.hashTo) {
             ui.selectAll('li')
                 .datum(function() {
@@ -505,8 +509,20 @@ window.onhashchange = function () {
                 })
                 .style('opacity', function(d) {
                     var opacity = 1 - (getVisitors(d) / number);
-                    return opacity;
-                });   
+
+                    if (opacity < 0.1 && !this.done) {
+                        this.done = true;
+                        this.innerHTML = '<img src="images/explosion.gif" style="width:30;height:30px;">';
+                        var that = this;
+                        setTimeout(function(){
+                            that.style['height'] = '0px';
+                        }, 1000);
+                        return 1;
+                    } else {
+                        return opacity;
+                    }
+                    
+                });
         }
     }
     updateParent(ui.from, state.hashFrom);

@@ -45,7 +45,7 @@ function IProvider() {
 
 var CLIENT_ID = '125867639228-55svp06ntafe8b2uf27m7llvk2ernk3s.apps.googleusercontent.com'
     , SCOPES = 'https://www.googleapis.com/auth/analytics.readonly'
-    , MaxResults = 1000000000
+    , MaxResults = 1000
     ;
 
 module.exports = function(callback) {
@@ -107,13 +107,24 @@ var GAClient = function(key) {
         }
     }
 
-    function report(dim, profileId, datebegin, dateend, callback) {
+    function report(dim, profileId, datebegin, dateend, sindex, callback) {
         gapi.client.analytics.data.ga.get({
             ids: 'ga:' + profileId,
             'start-date': datebegin,
             'end-date': dateend,
             metrics: 'ga:visitors,ga:timeOnSite',
-            dimensions: dim
+            dimensions: dim,
+            'start-index' : sindex,
+            'max-result' : MaxResults
+        }).execute(callback);
+    }
+
+    function realtime(dim, profileId, callback) {
+        gapi.client.analytics.data.realtime.get({
+            ids: 'ga:' + profileId,
+            metrics: 'rt:pageviews',
+            dimensions: dim,
+            'max-result' : MaxResults
         }).execute(callback);
     }
 
@@ -200,7 +211,7 @@ var GAClient = function(key) {
     };
 
     proto.reports = {
-        social : function(profileId, datebegin, dateend, callback) {
+        social : function(profileId, datebegin, dateend, callback, startIndex) {
             var act = 'reports.social';
             proto.on(act, wrapperParser(parserSocial, callback));
 
@@ -209,16 +220,36 @@ var GAClient = function(key) {
                 profileId,
                 datebegin,
                 dateend,
+                startIndex,
                 handle(act)
             );
         },
-        geo : function(datebegin, dateend, callback) {
+        social_realtime : function(profileId, callback) {
+            var act = 'reports.social';
+            proto.on(act, wrapperParser(parserSocial_realtime, callback));
+
+            //wrapperParser(parserSocial, callback)(null, require('./data'));
+            realtime('rt:referralPath,rt:medium,rt:browser,rt:country,rt:source,rt:pagePath',
+                profileId,
+                handle(act)
+            );
+        },
+        geo : function(profileId, datebegin, dateend, callback, startIndex) {
             var act = 'reports.geo';
             proto.on(act, wrapperParser(parserSocial, callback));
             report('ga:dateHour,ga:fullReferrer,ga:country,ga:pagePath,ga:city,ga:latitude,ga:longitude',
                 profileId,
                 datebegin,
                 dateend,
+                startIndex,
+                handle(act)
+            );
+        },
+        geo_realtime : function(profileId, callback) {
+            var act = 'reports.geo';
+            proto.on(act, wrapperParser(parserSocial, callback));
+            realtime('ga:dateHour,ga:fullReferrer,ga:country,ga:pagePath,ga:city,ga:latitude,ga:longitude',
+                profileId,
                 handle(act)
             );
         }
@@ -226,11 +257,11 @@ var GAClient = function(key) {
 
     function wrapperParser(parser, callback) {
         return function (err, data) {
-            callback && callback(err, parser(data));
+            callback && callback(err, parser(data, callback));
         }
     }
 
-    function parserSocial(data) {
+    function parserSocial(data, callback) {
         if (!data || !(data = data.result) || !data.rows)
             return [];
 
@@ -241,6 +272,10 @@ var GAClient = function(key) {
             , from = {}
             , to = {}
             ;
+
+        if (data.nextLink)
+            proto.reports.social(data.profileInfo.profileId, data.query['start-date'], data.query['end-date'], callback, 1 + data.query['max-result']);
+
 
         var fr, sm, b, c, sn, oh = 60 * 1000;
 
@@ -273,12 +308,64 @@ var GAClient = function(key) {
                     , to : {
                         pagePath : to[d[6]] || (to[d[6]] = new ToNode(d[6], d[6]))
                     }
-                    , amount : parseInt(d[7])
+                    , amount : amout
                     , weight : parseFloat(d[8])
                 });
             }
         }
 
         return res.reverse();
+    }
+
+    function parserSocial_realtime(data, callback) {
+        if (!data || !(data = data.result) || !data.rows)
+            return [];
+
+        var rows = data.rows
+            , l = rows.length
+            , d
+            , res = []
+            , from = {}
+            , to = {}
+            ;
+
+
+        var fr, sm, b, c, sn, oh = 60 * 1000;
+
+        while(--l > -1) {
+            d = rows[l];
+            fr = d[0];
+            sm = d[1];
+            b = d[2];
+            c = d[3];
+            sn = d[4];
+
+
+            var amout =  parseInt(d[6]);
+            var hours = d[0];
+
+            var time = Date.now();
+
+            for (var i = 0; i < amout; i++) {
+
+                res.push({
+                    date : time
+                    , from : {
+                        fullReferrer : from[fr] || (from[fr] = new FromNode(fr, fr))
+                        , sourceMedium  : from[sm] || (from[sm] = new FromNode(sm, sm))
+                        , browser  : from[b] || (from[b] = new FromNode(b, b))
+                        , country  : from[c] || (from[c] = new FromNode(c, c))
+                        , socialNetwork  : from[sn] || (from[sn] = new FromNode(sn, sn))
+                    }
+                    , to : {
+                        pagePath : to[d[5]] || (to[d[5]] = new ToNode(d[5], d[5]))
+                    }
+                    , amount : amout
+                    , weight : 0
+                });
+            }
+        }
+
+        return res;
     }
 })(GAClient.prototype);

@@ -1,4 +1,4 @@
-var d3 = require('d3')
+var d3 = require('../node_modules/d3/d3.min')
     , gaapi = require('./gaapi')
     , processor = require('./processor')
     , physics = require('./physics')
@@ -25,7 +25,8 @@ var ui = {
         to : d3.select("#to"),
         buttons : {
             run : d3.select("#run")
-        }
+        },
+        chRealtime : d3.select('#realtime')
     }
     , uiSelected = {
         account : null,
@@ -228,6 +229,7 @@ function updateParent(ui, hash) {
         .data(hash.entries(), keyHash);
 
     lis.enter().append('li')
+        .attr('title', keyHash)
         .each(function(d) {
             d = d.value;
             d.x = hash === state.hashFrom ? liXl(this) : liXr(this);
@@ -276,8 +278,8 @@ function refresh(data) {
                 })
             };
         })
-        .entries(state.data));
-
+        .entries(state.data)
+    );
 }
 
 
@@ -285,7 +287,18 @@ var timeFormat = d3.time.format("%Y%m%d%H%M")
     , reqFormat = d3.time.format("%Y-%m-%d")
     ;
 
-ui.buttons.run.on('click', function() {
+function handleData(err, data) {
+    if (err) {
+        logError(err);
+        return;
+    }
+
+    refresh(data);
+    if (ui.chRealtime.node().checked)
+        setTimeout(runClick, 5000);
+}
+
+function runClick() {
 
     if (!uiSelected.profile)
         return;
@@ -294,14 +307,19 @@ ui.buttons.run.on('click', function() {
         , old = now - (14 * 24 * 60 * 60 * 100)
         ;
 
-    provider.reports.social(uiSelected.profile.id, reqFormat(new Date(old)), reqFormat(new Date(now)), function(err, data) {
-        if (err) {
-            logError(err);
-            return;
-        }
+    !ui.chRealtime.node().checked
+        ? provider.reports.social(uiSelected.profile.id, reqFormat(new Date(old)), reqFormat(new Date(now)), handleData)
+        : provider.reports.social_realtime(uiSelected.profile.id, handleData)
+    ;
+}
 
-        refresh(data);
-    });
+ui.buttons.run.on('click', function() {
+    /*state.data = [];
+    state.hashFrom = d3.map({});
+    state.hashTo = d3.map({});
+    processor.bounds([0, 0]);*/
+
+    runClick();
 });
 
 function clickProfile(d) {
@@ -471,3 +489,18 @@ var progress = prbr(d3.select('#barcont'), 0, 0)
     .maxLabelEvent('Максимьное кол-во времени день: ');
 
 gaapi(singIn);
+
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-28343295-13', 'artzub.com');
+ga('send', 'pageview');
+
+function loop() {
+    ga('set', 'page', "?" + Math.random()  * 20);
+    ga('send', 'pageview');
+    setTimeout(loop, 5000);
+}
+

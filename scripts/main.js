@@ -222,7 +222,7 @@ function sortFun(a, b) {
     return d3.ascending(a.value.visitors, b.value.visitors);
 }
 
-function redrawCounters(ui, hash) {
+var redrawCounters = function(ui, hash) {
     ui.selectAll('li>span')
         .datum(function() {
             return this.parentNode.__data__;
@@ -231,6 +231,7 @@ function redrawCounters(ui, hash) {
         .style('bolder-color', getBolderColor)
         .text(getVisitors);
 }
+
 
 function updateParent(ui, hash) {
     var lis = ui.selectAll('li')
@@ -243,9 +244,10 @@ function updateParent(ui, hash) {
             d.y = liY(this);
             d3.select(this).html(hash === state.hashFrom ? (d.name + ' <span>' + getVisitors(d) + '</span>') : ('<span>' + getVisitors(d) + '</span> ' + d.name));
         });
+    updatePadding(ui);
+}
 
-    
-
+function updatePadding(ui) {
     var height = 0;
     ui.selectAll('li').each(function() {
         height += this.getBoundingClientRect().height;
@@ -483,3 +485,30 @@ var progress = prbr(d3.select('#barcont'), 0, 0)
     .maxLabelEvent('Максимьное кол-во времени день: ');
 
 gaapi(singIn);
+
+
+window.onhashchange = function () {
+    var number = parseInt(window.location.hash.slice(1));
+    updateParent = function(ui, hash) {
+        if (hash === state.hashFrom) {
+            ui.selectAll('li').html('<img src="images/gun.png" style="width:30;height:30px;">');
+        } else {
+            ui.selectAll('li').html('<img src="images/screem.png" style="width:30;height:30px;">');
+        }
+    }
+    redrawCounters = function(ui, hash) {
+        // console.log(1);
+        if (hash === state.hashTo) {
+            ui.selectAll('li')
+                .datum(function() {
+                    return this.__data__;
+                })
+                .style('opacity', function(d) {
+                    var opacity = 1 - (getVisitors(d) / number);
+                    return opacity;
+                });   
+        }
+    }
+    updateParent(ui.from, state.hashFrom);
+    updateParent(ui.to, state.hashTo);
+ }

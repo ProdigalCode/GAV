@@ -4,6 +4,7 @@ var d3 = require('../node_modules/d3/d3.min')
     , physics = require('./physics')
     , graphic = require('./graphic')
     , prbr = require('./prbr')
+    , getData = require('./gendata')
     ;
 
 function log(label, data) {
@@ -271,11 +272,13 @@ function refresh(data) {
         , rb = data.length > 1 ? data.slice(-1).pop().date : lb
         ;
 
+    state.data = !state.needsRefresh && state.data ? state.data : [];
+
     data.forEach(initNode);
 
     physics.size(size);
 
-    state.data = state.needsRefresh && state.data ? state.data : [].concat(data);
+    state.data = state.data.concat(data);
     state.needsRefresh = false;
 
     processor.bounds([lb - (ui.chRealtime && ui.chRealtime.node().checked ? temp : 0), rb]);
@@ -326,10 +329,15 @@ function runClick() {
         , old = now - (14 * 24 * 60 * 60 * 100)
         ;
 
-    !ui.chRealtime.node().checked
-        ? provider.reports.social(uiSelected.profile.id, reqFormat(new Date(old)), reqFormat(new Date(now)), handleData)
-        : provider.reports.social_realtime(uiSelected.profile.id, handleData)
-    ;
+    if (location.search === '?demo' && !state.demo) {
+        handleData(null, getData(200));
+    }
+    else {
+        !ui.chRealtime.node().checked
+            ? provider.reports.social(uiSelected.profile.id, reqFormat(new Date(old)), reqFormat(new Date(now)), handleData)
+            : provider.reports.social_realtime(uiSelected.profile.id, handleData)
+        ;
+    }
 }
 
 ui.buttons.run.on('click', function() {
@@ -543,8 +551,8 @@ window.onhashchange = function () {
                         this.innerHTML = '<img src="images/explosion.gif" style="width:30;height:30px;">';
                         var that = this;
                         setTimeout(function(){
-                            d3.select(that).remove();
-                        }, 2000);
+                            that.parentNode.removeChild(that);
+                        }, 5000);
                         return 1;
                     } else {
                         return opacity;

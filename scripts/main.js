@@ -307,13 +307,14 @@ function handleData(err, data) {
         return;
     }
 
+    document.getElementById('spinner').style['display'] = 'none';
     refresh(data);
     if (ui.chRealtime.node().checked)
         setTimeout(runClick, 5000);
 }
 
 function runClick() {
-
+    document.getElementById('spinner').style['display'] = '';
     if (!uiSelected.profile)
         return;
 

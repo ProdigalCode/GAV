@@ -251,12 +251,15 @@ function updateParent(ui, hash) {
 
 function updatePadding(ui) {
     var height = 0;
+    ui.style('padding-top', 0);
     ui.selectAll('li').each(function() {
         height += this.getBoundingClientRect().height;
     });
-    var padding = Math.max(0, (parseInt(ui.style('height')) - height) / 2);
-    ui.style('padding-top', padding + 'px');
 
+    var uih = ui.node().getBoundingClientRect().height;
+
+    var padding = Math.max(0, (uih - height) / 2);
+    ui.style('padding-top', padding + 'px');
     ui.style('height', (size[1] - 185 - padding) + 'px');
 }
 
@@ -512,10 +515,10 @@ window.onhashchange = function () {
     var number = parseInt(window.location.hash.slice(1));
     updateParent = function(ui, hash) {
         if (hash === state.hashFrom) {
-            ui.selectAll('li').html('<img src="images/gun.png" style="width:30;height:30px;">');
+            ui.selectAll('li').html('<img src="images/gun.png" style="width:30;height:30px;margin-top: 15px">');
         } else {
             ui.selectAll('li').each(function(d) {
-                d3.select(this).html('<img src="images/screem.png" style="width:30;height:30px;"><span>' + d.value.name + '</span>');
+                d3.select(this).html('<img src="images/screem.png" style="width:30;height:30px;margin:0;margin-top: 10px;">' + d.value.name );
             });
         }
     };

@@ -231,7 +231,7 @@ var redrawCounters = function(ui, hash) {
         .style('background', getSpanColor)
         .style('bolder-color', getBolderColor)
         .text(getVisitors);
-}
+};
 
 
 function updateParent(ui, hash) {
@@ -267,7 +267,7 @@ function refresh(data) {
     if (!data || !data.length)
         return;
 
-    var lb = processor.bounds()[0] || data[0].date
+    var lb = !state.needsRefresh && processor.bounds()[0] ? processor.bounds()[0] : data[0].date
         , rb = data.length > 1 ? data.slice(-1).pop().date : lb
         ;
 
@@ -275,9 +275,10 @@ function refresh(data) {
 
     physics.size(size);
 
-    state.data = state.data || [].concat(data);
+    state.data = state.needsRefresh && state.data ? state.data : [].concat(data);
+    state.needsRefresh = false;
 
-    processor.bounds([lb, rb]);
+    processor.bounds([lb - (ui.chRealtime && ui.chRealtime.node().checked ? temp : 0), rb]);
 
     !processor.IsRun() && processor.start();
 
@@ -332,10 +333,14 @@ function runClick() {
 }
 
 ui.buttons.run.on('click', function() {
-    /*state.data = [];
+
+    state.needsRefresh = true;
     state.hashFrom = d3.map({});
     state.hashTo = d3.map({});
-    processor.bounds([0, 0]);*/
+    state.colors = d3.scale.category20();
+    progress.data([]);
+    processor.bounds([0, 0]);
+    physics.nodes([]);
 
     runClick();
 });
@@ -407,7 +412,8 @@ function getVisible(d) {
 }
 
 function filterChild(d) {
-    return d.visible;
+    d.parent && console.log(d.parent.y);
+    return d.visible && d.parent && d.parent.y > 0;
 }
 
 /**
@@ -454,7 +460,7 @@ function rending() {
 
     rqId = requestAnimationFrame(rending, undefined);
 
-    var n = physics.nodes();
+    var n = physics.nodes().filter(filterChild);
 
     if (!ctx || valid || !n || !n.length)
         return;
@@ -537,8 +543,8 @@ window.onhashchange = function () {
                         this.innerHTML = '<img src="images/explosion.gif" style="width:30;height:30px;">';
                         var that = this;
                         setTimeout(function(){
-                            that.style['height'] = '0px';
-                        }, 1000);
+                            d3.select(that).remove();
+                        }, 2000);
                         return 1;
                     } else {
                         return opacity;

@@ -33,7 +33,7 @@ function cluster(alpha) {
 
         if (node === d) return;
 
-        !d.alive && d.opacity > 0 && (d.opacity -= .3);
+        !d.alive && d.opacity > 0 && (d.opacity -= .75);
         d.opacity = d.opacity > 0 ? d.opacity : 0;
         d.visible = !!d.opacity;
         if (!d.visible) {

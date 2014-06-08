@@ -150,11 +150,15 @@ var GAClient = function(key) {
             at = {};
             at.expiration = now + msToAdd;
             at.access_token = key.access_token;
-            localStorage.setItem("ga-access_token", at);
+            localStorage.setItem("ga-access_token", JSON.stringify(at));
             dispatch('signIn', null);
         }
         else {
             at = localStorage.getItem("ga-access_token");
+            if (at && at !== '[object Object]')
+                at = JSON.parse(at);
+
+
 
             gapi && gapi.auth.authorize({
                 client_id: key,

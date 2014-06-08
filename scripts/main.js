@@ -78,19 +78,13 @@ function handle(sel_prop, ui_prop, css_class, click_fn) {
                 && click_fn.call(ui[ui_prop].node(), prop);
             });
         items.exit().remove();
-        ui[ui_prop].on('chanege', click_fn);
+        ui[ui_prop].on('change', click_fn);
     }
 }
 
 function clickTopMenu(click_fn) {
     return function(d) {
-        /*d3.select(this.parentNode)
-            .selectAll('li')
-            .classed('uiSelected', false);*/
-        /*d3.select(this.parentNode.parentNode)
-            .select('span').text(d.name);
-        d3.select(this)
-            .classed('uiSelected', true);*/
+        console.log(12);
         click_fn &&
         this.selectedIndex &&
         click_fn(this[this.selectedIndex].__data__);
@@ -199,7 +193,7 @@ function liY(li) {
         valueOf : function() {
             //li.offsetTop + li.parentNode.offsetTop + li
             var rect = li.getBoundingClientRect();
-            return (rect.top + rect.height) / 2 + 55;
+            return rect.top + rect.height / 2;
         }
     };
 }
@@ -270,7 +264,7 @@ function refresh(data) {
 
     progress.data(d3.nest()
         .key(function (d) {
-            return d.date
+            return +d.date;
         })
         .rollup(function (leaves) {
             return {
@@ -286,12 +280,21 @@ function refresh(data) {
 
 }
 
+
+var timeFormat = d3.time.format("%Y%m%d%H%M")
+    , reqFormat = d3.time.format("%Y-%m-%d")
+    ;
+
 ui.buttons.run.on('click', function() {
 
     if (!uiSelected.profile)
         return;
 
-    provider.reports.social(uiSelected.profile.id, '2014-03-01', '2014-03-30', function(err, data) {
+    var now = Date.now()
+        , old = now - (14 * 24 * 60 * 60 * 100)
+        ;
+
+    provider.reports.social(uiSelected.profile.id, reqFormat(new Date(old)), reqFormat(new Date(now)), function(err, data) {
         if (err) {
             logError(err);
             return;
@@ -337,6 +340,7 @@ processor.on('calc', function (d) {
         d.opacity = 100;
         p.visitors = p.visitors || 0;
         p.visitors++;
+        d.paths = [];
     }
 
     d.fixed = false;
@@ -351,7 +355,7 @@ processor.on('calc', function (d) {
     physics && physics.nodes(state.data.filter(filterChild)).start();
 });
 
-var temp = 120;
+var temp = 3600 * 1000;
 processor.on('calcrightbound', function(l) {
     processor.leftBound += temp;
 });
@@ -455,7 +459,7 @@ d3.select(window).on('resize', resize);
 
 var progress = prbr(d3.select('#barcont'), 0, 0)
     .on('getAxisXValue', function (d) {
-        return d.key;
+        return +d.key;
     })
     .on('getAxisYValue', function (d) {
         return +d.values.sum;

@@ -36,6 +36,9 @@ function cluster(alpha) {
         !d.alive && d.opacity > 0 && (d.opacity -= .3);
         d.opacity = d.opacity > 0 ? d.opacity : 0;
         d.visible = !!d.opacity;
+        if (!d.visible) {
+            delete d.paths;
+        }
 
         x = d.x - node.x;
         y = d.y - node.y;
@@ -49,6 +52,11 @@ function cluster(alpha) {
             d.x -= x;
             d.y -= y;
         }
+
+        d.paths && d.paths.push({
+            x : d.x,
+            y : d.y
+        });
         if (d.alive && r >= l) {
             d.alive = false;
             d.parent.visitors++;

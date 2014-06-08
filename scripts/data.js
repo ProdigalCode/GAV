@@ -1,4 +1,4 @@
-module.exports = [
+module.exports =
     {
         "id": "gapiRpc",
         "result": {
@@ -1042,4 +1042,4 @@ module.exports = [
             ]
         }
     }
-];
+;

@@ -33,7 +33,7 @@ function sortByOpacity(a, b) {
  * @param lastEvent
  * @returns {HTMLCanvasElement|null}
  */
-function drawTrack(nodes, lastEvent) {
+function drawTrack(nodes) {
     if(!nodes || !nodes.length)
         return null;
 
@@ -56,9 +56,6 @@ function drawTrack(nodes, lastEvent) {
 
     trackCtx.globalCompositeOperation = 'source-over';
 
-    trackCtx.translate(lastEvent.translate[0], lastEvent.translate[1]);
-    trackCtx.scale(lastEvent.scale, lastEvent.scale);
-
     var d, l = nodes.length, curColor, c = null;
 
     trackCtx.fillStyle = "none";
@@ -66,8 +63,8 @@ function drawTrack(nodes, lastEvent) {
     while(--l > -1) {
         d = nodes[l];
 
-        curColor = getSelectedColor(d);
-        if (!c || compereColor(c, curColor)) {
+        curColor = d.color;
+        if (!c || d.color.r != c.r || d.color.b != c.b || d.color.g != c.g) {
             c = curColor;
             trackCtx.strokeStyle = c.toString();
         }
@@ -81,11 +78,11 @@ function drawTrack(nodes, lastEvent) {
             , p
             ;
 
-        if (!d.flash && d.paths.length < render.setting.lengthTrack)
-            d.paths = [];
+        /*if (d.paths.length < 3)
+            d.paths = [];*/
 
-        if (d.paths.length > render.setting.lengthTrack)
-            d.paths.splice(0, d.flash ? render.setting.lengthTrack : render.setting.lengthTrack + 1);
+        if (d.paths.length > 3)
+            d.paths.splice(0, 5);
 
         trackCtx.moveTo(Math.floor(d.x), Math.floor(d.y));
         for (p in rs) {
@@ -99,7 +96,7 @@ function drawTrack(nodes, lastEvent) {
         }
         trackCtx.stroke();
 
-        d.alive && d.parent && (d.flash || d.paths.length > 1) && d.paths.push({
+        d.parent && d.paths.push({
             x : d.x,
             y : d.y
         });
@@ -142,18 +139,18 @@ render.draw = function(nodes) {
     bufCtx.save();
     bufCtx.clearRect(0, 0, render.size[0], render.size[1]);
 
-    /*cn = (nodes || [])
+    cn = (nodes || [])
         .sort(sortByOpacity)
         .sort(sortByColor);
 
-    tracksImg = drawTrack(cn, lastEvent);
+    tracksImg = drawTrack(cn);
     tracksImg &&
-        bufCtx.drawImage(tracksImg, 0, 0, render.size[0], render.size[1]);*/
+        bufCtx.drawImage(tracksImg, 0, 0, render.size[0], render.size[1]);
 
     /*bufCtx.translate(lastEvent.translate[0], lastEvent.translate[1]);
     bufCtx.scale(lastEvent.scale, lastEvent.scale);*/
 
-    //bufCtx.globalCompositeOperation = 'source-over';
+    bufCtx.globalCompositeOperation = 'source-over';
 
     cn = cn || (nodes || [])
         .sort(sortByOpacity)

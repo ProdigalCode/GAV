@@ -202,15 +202,15 @@ var GAClient = function(key) {
     proto.reports = {
         social : function(profileId, datebegin, dateend, callback) {
             var act = 'reports.social';
-            //proto.on(act, wrapperParser(parserSocial, callback));
+            proto.on(act, wrapperParser(parserSocial, callback));
 
-            wrapperParser(parserSocial, callback)(null, require('./data'));
-            /*report('ga:dateHour,ga:fullReferrer,ga:sourceMedium,ga:browser,ga:country,ga:socialNetwork,ga:pagePath',
+            //wrapperParser(parserSocial, callback)(null, require('./data'));
+            report('ga:dateHour,ga:fullReferrer,ga:sourceMedium,ga:browser,ga:country,ga:socialNetwork,ga:pagePath',
                 profileId,
                 datebegin,
                 dateend,
                 handle(act)
-            );*/
+            );
         },
         geo : function(datebegin, dateend, callback) {
             var act = 'reports.geo';
@@ -231,7 +231,7 @@ var GAClient = function(key) {
     }
 
     function parserSocial(data) {
-        if (!data || !data[0] || !(data = data[0].result) || !data.rows)
+        if (!data || !(data = data.result) || !data.rows)
             return [];
 
         var rows = data.rows
@@ -242,7 +242,7 @@ var GAClient = function(key) {
             , to = {}
             ;
 
-        var fr, sm, b, c, sn;
+        var fr, sm, b, c, sn, oh = 60 * 1000;
 
         while(--l > -1) {
             d = rows[l];
@@ -254,11 +254,15 @@ var GAClient = function(key) {
 
             
             var amout =  parseInt(d[7]);
-            var hours = parseInt(d[0] + '00');
+            var hours = d[0];
+
+            var time = +new Date(hours.replace(/(\d\d\d\d)(\d\d)(\d\d)(\d\d)/, '$1-$2-$3 $4:00'));
+            var kof = 60 / amout * oh;
+
             for (var i = 0; i < amout; i++) {
                 
                 res.push({
-                    date : hours + Math.floor(i / amout * 60)
+                    date : time /*+ Math.floor(kof * i)*/
                     , from : {
                         fullReferrer : from[fr] || (from[fr] = new FromNode(fr, fr))
                         , sourceMedium  : from[sm] || (from[sm] = new FromNode(sm, sm))

@@ -85,7 +85,6 @@ function handle(sel_prop, ui_prop, css_class, click_fn) {
 
 function clickTopMenu(click_fn) {
     return function(d) {
-        console.log(12);
         click_fn &&
         this.selectedIndex &&
         click_fn(this[this.selectedIndex].__data__);
@@ -224,6 +223,17 @@ function sortFun(a, b) {
     return d3.ascending(a.value.visitors, b.value.visitors);
 }
 
+var redrawCounters = function(ui, hash) {
+    ui.selectAll('li>span')
+        .datum(function() {
+            return this.parentNode.__data__;
+        })
+        .style('background', getSpanColor)
+        .style('bolder-color', getBolderColor)
+        .text(getVisitors);
+}
+
+
 function updateParent(ui, hash) {
     var lis = ui.selectAll('li')
         .data(hash.entries(), keyHash);
@@ -236,14 +246,18 @@ function updateParent(ui, hash) {
             d.y = liY(this);
             d3.select(this).html(hash === state.hashFrom ? (d.name + ' <span>' + getVisitors(d) + '</span>') : ('<span>' + getVisitors(d) + '</span> ' + d.name));
         });
+    updatePadding(ui);
+}
 
-    ui.selectAll('li>span')
-        .datum(function() {
-            return this.parentNode.__data__;
-        })
-        .style('background', getSpanColor)
-        .style('bolder-color', getBolderColor)
-        .text(getVisitors);
+function updatePadding(ui) {
+    var height = 0;
+    ui.selectAll('li').each(function() {
+        height += this.getBoundingClientRect().height;
+    });
+    var padding = Math.max(0, (parseInt(ui.style('height')) - height) / 2);
+    ui.style('padding-top', padding + 'px');
+
+    ui.style('height', (size[1] - 185 - padding) + 'px');
 }
 
 function refresh(data) {
@@ -340,8 +354,8 @@ processor.on('finish', function() {
 });
 
 processor.on('tick', function(items, l, r) {
-    updateParent(ui.from, state.hashFrom);
-    updateParent(ui.to, state.hashTo);
+    redrawCounters(ui.from, state.hashFrom);
+    redrawCounters(ui.to, state.hashTo);
     progress.inc(l, r);
 });
 
@@ -466,8 +480,8 @@ function resize() {
 
     progress.size(size[0], 100);
 
-    ui.from.style('height', (size[1] - 185) + 'px');
-    ui.to.style('height', (size[1] - 185) + 'px');
+    // ui.from.style('height', (size[1] - 185) + 'px');
+    // ui.to.style('height', (size[1] - 185) + 'px');
 
     updateParent(ui.from, state.hashFrom);
     updateParent(ui.to, state.hashTo);
@@ -490,6 +504,48 @@ var progress = prbr(d3.select('#barcont'), 0, 0)
 
 gaapi(singIn);
 
+
+var explosion = new Image();
+explosion.src = 'images/explosion.gif';
+
+window.onhashchange = function () {
+    var number = parseInt(window.location.hash.slice(1));
+    updateParent = function(ui, hash) {
+        if (hash === state.hashFrom) {
+            ui.selectAll('li').html('<img src="images/gun.png" style="width:30;height:30px;">');
+        } else {
+            ui.selectAll('li').each(function(d) {
+                d3.select(this).html('<img src="images/screem.png" style="width:30;height:30px;"><span>' + d.value.name + '</span>');
+            });
+        }
+    }
+    redrawCounters = function(ui, hash) {
+        if (hash === state.hashTo) {
+            ui.selectAll('li')
+                .datum(function() {
+                    return this.__data__;
+                })
+                .style('opacity', function(d) {
+                    var opacity = 1 - (getVisitors(d) / number);
+
+                    if (opacity < 0.1 && !this.done) {
+                        this.done = true;
+                        this.innerHTML = '<img src="images/explosion.gif" style="width:30;height:30px;">';
+                        var that = this;
+                        setTimeout(function(){
+                            that.style['height'] = '0px';
+                        }, 1000);
+                        return 1;
+                    } else {
+                        return opacity;
+                    }
+                    
+                });
+        }
+    }
+    updateParent(ui.from, state.hashFrom);
+    updateParent(ui.to, state.hashTo);
+ }
 (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
     (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)

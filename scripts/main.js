@@ -518,7 +518,7 @@ window.onhashchange = function () {
                 d3.select(this).html('<img src="images/screem.png" style="width:30;height:30px;"><span>' + d.value.name + '</span>');
             });
         }
-    }
+    };
     redrawCounters = function(ui, hash) {
         if (hash === state.hashTo) {
             ui.selectAll('li')
@@ -542,10 +542,11 @@ window.onhashchange = function () {
                     
                 });
         }
-    }
+    };
     updateParent(ui.from, state.hashFrom);
     updateParent(ui.to, state.hashTo);
- }
+};
+
 (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
     (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)

@@ -6,6 +6,8 @@ var connect = require('gulp-connect');
 var gutil = require('gulp-util');
 var browserify = require('gulp-browserify');
 var livereload = require('gulp-livereload');
+var map = require('map-stream');
+
 
 // Basic usage
 gulp.task('scripts', function() {
@@ -28,11 +30,29 @@ gulp.task('connect', function() {
   });
 });
 
+
+var hasErrors = false;
+var errorReporter = function () {
+  return map(function (file, cb) {
+    if (!file.jshint.success) {
+      hasErrors = true;
+    }
+    cb(null, file);
+  });
+};
+
 gulp.task('lint', function() {
   return gulp.src('./scripts/**/*.js')
     .pipe(jshint())
-    .pipe(jshint.reporter('default'))
-    .pipe(jshint.reporter('fail'));
+    .pipe(jshint.reporter('jshint-stylish'))
+    .pipe(errorReporter())
+    .on('end', function() {
+      if (hasErrors) {
+        process.exit(1);
+      }
+    });
+    // .pipe(jshint.reporter('fail'))
 });
+
 
 gulp.task('default', ['scripts', 'watch', 'connect']);

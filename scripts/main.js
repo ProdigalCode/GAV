@@ -8,26 +8,29 @@ var d3 = require('../node_modules/d3/d3.min')
     ;
 
 function log(label, data) {
-    if (arguments.length < 2)
+    if (arguments.length < 2) {
         console.log(label);
-    else
+    }
+    else {
         console.log(label, data);
+    }
 }
 
+
 function logError(error) {
-    log("error", error);
+    log('error', error);
 }
 
 var ui = {
-        accounts : d3.select('#accounts'),
-        webProperties : d3.select("#webProperties"),
-        profiles : d3.select("#profiles"),
-        from : d3.select("#from"),
-        to : d3.select("#to"),
-        buttons : {
-            run : d3.select("#run")
-        },
-        chRealtime : d3.select('#realtime')
+        accounts : d3.select('#accounts')
+        , webProperties : d3.select('#webProperties')
+        , profiles : d3.select('#profiles')
+        , from : d3.select('#from')
+        , to : d3.select('#to')
+        , buttons : {
+            run : d3.select('#run')
+        }
+        , chRealtime : d3.select('#realtime')
     }
     , uiSelected = {
         account : null,
@@ -44,8 +47,9 @@ var provider;
 
 function singIn(prd) {
     provider = prd;
-    if (!provider)
+    if (!provider) {
         return;
+    }
     provider.on('signIn', handleSignIn);
     provider.signIn();
     resize();
@@ -74,22 +78,21 @@ function handle(sel_prop, ui_prop, css_class, click_fn) {
             })
             .on('click', click_fn)
             .each(function(d) {
-                prop
-                && prop.id === d.id
-                && (d3.select(this).attr('selected', 'selected'))
-                && click_fn.call(ui[ui_prop].node(), prop);
+                if (prop && (prop.id === d.id) && (d3.select(this).attr('selected', 'selected'))) {
+                    click_fn.call(ui[ui_prop].node(), prop);
+                }
             });
         items.exit().remove();
         ui[ui_prop].on('change', click_fn);
-    }
+    };
 }
 
 function clickTopMenu(click_fn) {
     return function(d) {
-        click_fn &&
-        this.selectedIndex &&
-        click_fn(this[this.selectedIndex].__data__);
-    }
+        if (click_fn && this.selectedIndex) {
+            click_fn(this[this.selectedIndex].__data__);
+        }
+    };
 }
 
 function handleSignIn(err) {
@@ -147,7 +150,7 @@ function ofSize(d) {
         valueOf : function() {
             return 16;//state.sizes(d.weight);
         }
-    }
+    };
 }
 
 function initNode(d) {
@@ -304,8 +307,8 @@ function refresh(data) {
 }
 
 
-var timeFormat = d3.time.format("%Y%m%d%H%M")
-    , reqFormat = d3.time.format("%Y-%m-%d")
+var timeFormat = d3.time.format('%Y%m%d%H%M')
+    , reqFormat = d3.time.format('%Y-%m-%d')
     ;
 
 function handleData(err, data) {
@@ -454,10 +457,10 @@ function filterChild(d) {
 
 var valid = false
     , rqId
-    , canvas = d3.select("#canvas").append('canvas')
-        .text("This browser don't support element type of Canvas.")
-        .attr("width", size[0])
-        .attr("height", size[1])
+    , canvas = d3.select('#canvas').append('canvas')
+        .text('This browser don not support element type of Canvas.')
+        .attr('width', size[0])
+        .attr('height', size[1])
         //.call(zoom)
         //.on('mousemove.tooltip', moveMouse)
         .node()
@@ -574,7 +577,7 @@ ga('create', 'UA-28343295-13', 'artzub.com');
 ga('send', 'pageview');
 
 function loop() {
-    ga('set', 'page', "?" + Math.random()  * 20);
+    ga('set', 'page', '?' + Math.random()  * 20);
     ga('send', 'pageview');
     setTimeout(loop, 5000);
 }

@@ -1,4 +1,7 @@
 var gulp = require('gulp');
+
+// plugins
+var jshint = require('gulp-jshint');
 var connect = require('gulp-connect');
 var gutil = require('gulp-util');
 var browserify = require('gulp-browserify');
@@ -23,6 +26,13 @@ gulp.task('connect', function() {
   connect.server({
     port: 8000
   });
+});
+
+gulp.task('lint', function() {
+  return gulp.src('./scripts/**/*.js')
+    .pipe(jshint())
+    .pipe(jshint.reporter('default'))
+    .pipe(jshint.reporter('fail'));
 });
 
 gulp.task('default', ['scripts', 'watch', 'connect']);

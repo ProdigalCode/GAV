@@ -1,64 +1,35 @@
-/**
- * Function makes a node
- * @param that
- * @param name
- * @param d
- * @returns {{type: *, name: *, nodeValue: *}}
- * @constructor
- */
-function Node(that, name, d) {
-    that.name = name;
-    that.nodeValue = d;
-}
+var nodes = require('./nodes');
+var FromNode = nodes.FromNode;
+var ToNode = nodes.ToNode;
 
-function FromNode(name, d) {
-    Node(this, name, d);
-}
+// function IProvider() {
+//     return {
+//         signIn : function() {
 
-function ToNode(name, d) {
-    Node(this, name, d);
-}
+//         }
+//         , signOut : function () {
 
-function IProvider() {
-    return {
-        signIn : function() {
+//         }
+//         , getAccount : function () {
 
-        }
-        , signOut : function () {
+//         }
+//         , getProperty : function () {
 
-        }
-        , getAccount : function () {
+//         }
+//         , getView : function () {
 
-        }
-        , getProperty : function () {
-
-        }
-        , getView : function () {
-
-        }
-        , parse : function() {
-            return [];
-        }
-    }
-}
+//         }
+//         , parse : function() {
+//             return [];
+//         }
+//     }
+// }
 
 
 var CLIENT_ID = '125867639228-55svp06ntafe8b2uf27m7llvk2ernk3s.apps.googleusercontent.com'
     , SCOPES = 'https://www.googleapis.com/auth/analytics.readonly'
     , MaxResults = 1000
     ;
-
-module.exports = function(callback) {
-    var script = document.createElement('script');
-    window.LOADERAPI = handleClientLoad;
-    script.src = "https://apis.google.com/js/client.js?onload=LOADERAPI";
-    script.onerror = console.log.bind(console, 'error');
-    document.body.appendChild(script);
-
-    function handleClientLoad() {
-        callback && callback(new GAClient(CLIENT_ID));
-    }
-};
 
 var GAClient = function(key) {
     GAClient.ClientId = key;
@@ -73,11 +44,13 @@ var GAClient = function(key) {
     }
 
     function dispatch(action) {
-        if (action == '')
+        if (action === '') {
             return;
+        }
         var act = action.toString().toLowerCase();
-        isFn(actions[act]) &&
+        if (isFn(actions[act])) {
             actions[act].apply(GAClient, Array.prototype.slice.call(arguments, 1));
+        }
     }
 
     function error(msg) {
@@ -104,11 +77,11 @@ var GAClient = function(key) {
                 }
             }
             dispatch(action, err, data);
-        }
+        };
     }
 
     function report(dim, profileId, datebegin, dateend, sindex, callback) {
-        gapi.client.analytics.data.ga.get({
+        global.gapi.client.analytics.data.ga.get({
             ids: 'ga:' + profileId,
             'start-date': datebegin,
             'end-date': dateend,
@@ -120,7 +93,7 @@ var GAClient = function(key) {
     }
 
     function realtime(dim, profileId, callback) {
-        gapi.client.analytics.data.realtime.get({
+        global.gapi.client.analytics.data.realtime.get({
             ids: 'ga:' + profileId,
             metrics: 'rt:pageviews',
             dimensions: dim,
@@ -129,19 +102,22 @@ var GAClient = function(key) {
     }
 
     proto.on = function(action, callback) {
-        if (action == '')
+        if (action === '') {
             return;
+        }
         var act = action.toString().toLowerCase();
 
-        if (arguments.length < 2)
+        if (arguments.length < 2) {
             return actions[act];
+        }
         actions[act] = callback;
     };
 
     proto.signIn = function(key) {
+        var at;
         key = key || GAClient.ClientId;
         if (key.error) {
-            localStorage.removeItem("ga-access_token");
+            localStorage.removeItem('ga-access_token');
             dispatch('signIn', key.error);
         }
         else if (key.access_token) {
@@ -150,26 +126,27 @@ var GAClient = function(key) {
             at = {};
             at.expiration = now + msToAdd;
             at.access_token = key.access_token;
-            localStorage.setItem("ga-access_token", JSON.stringify(at));
+            localStorage.setItem('ga-access_token', JSON.stringify(at));
             dispatch('signIn', null);
         }
         else {
-            at = localStorage.getItem("ga-access_token");
-            if (at && at !== '[object Object]')
+            at = localStorage.getItem('ga-access_token');
+            if (at && at !== '[object Object]') {
                 at = JSON.parse(at);
+            }
 
-
-
-            gapi && gapi.auth.authorize({
-                client_id: key,
-                scope: SCOPES,
-                immediate: at && at.expiration > Date.now()
-            }, proto.signIn);
+            if (global.gapi) {
+                global.gapi.auth.authorize({
+                    client_id: key,
+                    scope: SCOPES,
+                    immediate: at && at.expiration > Date.now()
+                }, proto.signIn);
+            }
         }
     };
 
     proto.signOut = function() {
-        localStorage.removeItem("ga-access_token");
+        localStorage.removeItem('ga-access_token');
         dispatch('signout');
     };
 
@@ -178,8 +155,8 @@ var GAClient = function(key) {
             var act = 'accounts.list';
             proto.on(act, callback);
 
-            gapi.client.load('analytics', 'v3', function() {
-                gapi.client.analytics
+            global.gapi.client.load('analytics', 'v3', function() {
+                global.gapi.client.analytics
                     .management
                     .accounts
                     .list()
@@ -192,7 +169,7 @@ var GAClient = function(key) {
         list : function(accountId, callback) {
             var act = 'webproperties.list';
             proto.on(act, callback);
-            gapi.client.analytics
+            global.gapi.client.analytics
                 .management
                 .webproperties
                 .list({'accountId': accountId})
@@ -204,7 +181,7 @@ var GAClient = function(key) {
         list : function(accountId, webPropertyId, callback) {
             var act = 'profiles.list';
             proto.on(act, callback);
-            gapi.client.analytics
+            global.gapi.client.analytics
                 .management
                 .profiles
                 .list({
@@ -261,13 +238,16 @@ var GAClient = function(key) {
 
     function wrapperParser(parser, callback) {
         return function (err, data) {
-            callback && callback(err, parser(data, callback));
-        }
+            if (callback) {
+                callback(err, parser(data, callback));
+            }
+        };
     }
 
     function parserSocial(data, callback) {
-        if (!data || !(data = data.result) || !data.rows)
+        if (!data || !(data = data.result) || !data.rows) {
             return [];
+        }
 
         var rows = data.rows
             , l = rows.length
@@ -277,11 +257,12 @@ var GAClient = function(key) {
             , to = {}
             ;
 
-        if (data.nextLink)
+        if (data.nextLink) {
             proto.reports.social(data.profileInfo.profileId, data.query['start-date'], data.query['end-date'], callback, 1 + data.query['max-result']);
+        }
 
 
-        var fr, sm, b, c, sn, oh = 60 * 1000;
+        var fr, sm, b, c, sn;
 
         while(--l > -1) {
             d = rows[l];
@@ -296,7 +277,6 @@ var GAClient = function(key) {
             var hours = d[0];
 
             var time = +new Date(hours.replace(/(\d\d\d\d)(\d\d)(\d\d)(\d\d)/, '$1-$2-$3 $4:00'));
-            var kof = 60 / amout * oh;
 
             for (var i = 0; i < amout; i++) {
                 
@@ -321,9 +301,10 @@ var GAClient = function(key) {
         return res.reverse();
     }
 
-    function parserSocial_realtime(data, callback) {
-        if (!data || !(data = data.result) || !data.rows)
+    function parserSocial_realtime(data) {
+        if (!data || !(data = data.result) || !data.rows) {
             return [];
+        }
 
         var rows = data.rows
             , l = rows.length
@@ -334,7 +315,7 @@ var GAClient = function(key) {
             ;
 
 
-        var fr, sm, b, c, sn, oh = 60 * 1000;
+        var fr, sm, b, c, sn;
 
         while(--l > -1) {
             d = rows[l];
@@ -346,7 +327,6 @@ var GAClient = function(key) {
 
 
             var amout =  parseInt(d[6]);
-            var hours = d[0];
 
             var time = Date.now();
 
@@ -373,3 +353,16 @@ var GAClient = function(key) {
         return res;
     }
 })(GAClient.prototype);
+
+module.exports = function(callback) {
+    function handleClientLoad() {
+        if (callback) {
+            callback(new GAClient(CLIENT_ID));
+        }
+    }
+    var script = document.createElement('script');
+    window.LOADERAPI = handleClientLoad;
+    script.src = 'https://apis.google.com/js/client.js?onload=LOADERAPI';
+    script.onerror = console.log.bind(console, 'error');
+    document.body.appendChild(script);
+};

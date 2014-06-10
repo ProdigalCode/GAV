@@ -18,6 +18,8 @@
   "globals": { 
     "document": false,
     "window" : false,
-    "navigator" : false
+    "navigator" : false,
+    "localStorage" : false,
+    "Image" : false
   }
 }

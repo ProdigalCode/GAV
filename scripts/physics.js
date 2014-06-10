@@ -4,9 +4,9 @@ var size = [100, 100]
     , forceChild = d3.layout.force()
         .stop()
         .size(size)
-        .friction(.75)
+        .friction(0.75)
         .gravity(0)
-        .charge(function(d) { return -d.size * .064; })
+        .charge(function(d) { return -d.size * 0.064; })
         .on("tick", tick)
         .nodes([])
     ;

@@ -1,20 +1,9 @@
-function Node(that, name, d) {
-    that.name = name;
-    that.nodeValue = d;
-}
-
-function FromNode(name, d) {
-    Node(this, name, d);
-}
-
-function ToNode(name, d) {
-    Node(this, name, d);
-}
+var nodes = require('./nodes');
+var FromNode = nodes.FromNode;
+var ToNode = nodes.ToNode;
 
 function genData(len) {
     var res = [];
-    var from = {};
-    var to = {};
 
     var ft = new FromNode('test', 'test');
 
@@ -78,7 +67,7 @@ function genData(len) {
         var time = (startTime += step);
         var counts = Math.floor(Math.random() * ((i < 50) || (i > 150) ? 10 : 80 ));
 
-        for (var j = 0; j < (counts || 1); j++ )
+        for (var j = 0; j < (counts || 1); j++ ) {
             res.push({
                 date : time /*+ Math.floor(kof * i)*/
                 , from : {
@@ -94,6 +83,7 @@ function genData(len) {
                 , amount : 1
                 , weight : Math.random() * 2000
             });
+        }
     }
     return res;
 }

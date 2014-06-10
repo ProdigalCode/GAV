@@ -43,18 +43,6 @@ var ui = {
     ]
     ;
 
-var provider;
-
-function singIn(prd) {
-    provider = prd;
-    if (!provider) {
-        return;
-    }
-    provider.on('signIn', handleSignIn);
-    provider.signIn();
-    resize();
-}
-
 function keyItem(d) {
     return d.id;
 }
@@ -88,12 +76,50 @@ function handle(sel_prop, ui_prop, css_class, click_fn) {
 }
 
 function clickTopMenu(click_fn) {
-    return function(d) {
+    return function() {
         if (click_fn && this.selectedIndex) {
             click_fn(this[this.selectedIndex].__data__);
         }
     };
 }
+
+var provider;
+
+function clickProfile(d) {
+    uiSelected.profile = d;
+}
+
+function clickWebProperty(d) {
+    uiSelected.webProperty = d;
+    if (uiSelected.account && uiSelected.webProperty) {
+        provider.profiles.list(
+            uiSelected.account.id,
+            uiSelected.webProperty.id,
+            handle(
+                'profile',
+                'profiles',
+                '.profile',
+                clickTopMenu(clickProfile)
+            )
+        );
+    }
+}
+
+function clickAccount(d) {
+    uiSelected.account = d;
+    if (uiSelected.account) {
+        provider.webproperties.list(
+            uiSelected.account.id,
+            handle(
+                'webProperty',
+                'webProperties',
+                '.webProperty',
+                clickTopMenu(clickWebProperty)
+            )
+        );
+    }
+}
+
 
 function handleSignIn(err) {
     if (err) {
@@ -109,33 +135,14 @@ function handleSignIn(err) {
     ));
 }
 
-function clickAccount(d) {
-    uiSelected.account = d;
-    uiSelected.account &&
-    provider.webproperties.list(
-        uiSelected.account.id,
-        handle(
-            'webProperty',
-            'webProperties',
-            '.webProperty',
-            clickTopMenu(clickWebProperty)
-        )
-    );
-}
-
-function clickWebProperty(d) {
-    uiSelected.webProperty = d;
-    uiSelected.account && uiSelected.webProperty &&
-    provider.profiles.list(
-        uiSelected.account.id,
-        uiSelected.webProperty.id,
-        handle(
-            'profile',
-            'profiles',
-            '.profile',
-            clickTopMenu(clickProfile)
-        )
-    );
+function singIn(prd) {
+    provider = prd;
+    if (!provider) {
+        return;
+    }
+    provider.on('signIn', handleSignIn);
+    provider.signIn();
+    resize();
 }
 
 var state = {
@@ -145,7 +152,7 @@ var state = {
     , colors : d3.scale.category20()
 };
 
-function ofSize(d) {
+function ofSize() {
     return {
         valueOf : function() {
             return 16;//state.sizes(d.weight);
@@ -202,14 +209,6 @@ function liY(li) {
     };
 }
 
-function sortFrom(a, b) {
-    return d3.ascending(b.visitors, a.visitors);
-}
-
-function sortTo(b, a) {
-    return d3.ascending(b.links, a.links);
-}
-
 function getVisitors(d) {
     d = d.key ? d.value : d;
     return d.visitors || 0;
@@ -223,11 +222,7 @@ function getBolderColor(d) {
     return d3.rgb(getSpanColor(d)).brighter().brighter();
 }
 
-function sortFun(a, b) {
-    return d3.ascending(a.value.visitors, b.value.visitors);
-}
-
-var redrawCounters = function(ui, hash) {
+var redrawCounters = function(ui) {
     ui.selectAll('li>span')
         .datum(function() {
             return this.parentNode.__data__;
@@ -237,6 +232,19 @@ var redrawCounters = function(ui, hash) {
         .text(getVisitors);
 };
 
+function updatePadding(ui) {
+    var height = 0;
+    ui.style('padding-top', 0);
+    ui.selectAll('li').each(function() {
+        height += this.getBoundingClientRect().height;
+    });
+
+    var uih = ui.node().getBoundingClientRect().height;
+
+    var padding = Math.max(0, (uih - height) / 2);
+    ui.style('padding-top', padding + 'px');
+    ui.style('height', (size[1] - 185 - padding) + 'px');
+}
 
 function updateParent(ui, hash) {
     var lis = ui.selectAll('li')
@@ -253,23 +261,12 @@ function updateParent(ui, hash) {
     updatePadding(ui);
 }
 
-function updatePadding(ui) {
-    var height = 0;
-    ui.style('padding-top', 0);
-    ui.selectAll('li').each(function() {
-        height += this.getBoundingClientRect().height;
-    });
-
-    var uih = ui.node().getBoundingClientRect().height;
-
-    var padding = Math.max(0, (uih - height) / 2);
-    ui.style('padding-top', padding + 'px');
-    ui.style('height', (size[1] - 185 - padding) + 'px');
-}
+var temp = 3600 * 1000;
 
 function refresh(data) {
-    if (!data || !data.length)
+    if (!data || !data.length) {
         return;
+    }
 
     var lb = !state.needsRefresh && processor.bounds()[0] ? processor.bounds()[0] : data[0].date
         , rb = data.length > 1 ? data.slice(-1).pop().date : lb
@@ -286,7 +283,9 @@ function refresh(data) {
 
     processor.bounds([lb - (ui.chRealtime && ui.chRealtime.node().checked ? temp : 0), rb]);
 
-    !processor.IsRun() && processor.start();
+    if (!processor.IsRun()) {
+        processor.start();
+    }
 
     progress.data(d3.nest()
         .key(function (d) {
@@ -307,8 +306,7 @@ function refresh(data) {
 }
 
 
-var timeFormat = d3.time.format('%Y%m%d%H%M')
-    , reqFormat = d3.time.format('%Y-%m-%d')
+var reqFormat = d3.time.format('%Y-%m-%d')
     ;
 
 function handleData(err, data) {
@@ -319,29 +317,33 @@ function handleData(err, data) {
 
     document.getElementById('spinner').style['display'] = 'none';
     refresh(data);
-    if (ui.chRealtime.node().checked)
+    if (ui.chRealtime.node().checked) {
         setTimeout(runClick, 5000);
+    }
 }
-
 function runClick() {
     document.getElementById('spinner').style['display'] = '';
-    if (!uiSelected.profile)
+    if (!uiSelected.profile) {
         return;
+    }
 
     var now = Date.now()
         , old = now - (14 * 24 * 60 * 60 * 100)
         ;
 
-    if (location.search === '?demo' && !state.demo) {
+    if (global.location.search === '?demo' && !state.demo) {
         handleData(null, getData(200));
     }
     else {
-        !ui.chRealtime.node().checked
-            ? provider.reports.social(uiSelected.profile.id, reqFormat(new Date(old)), reqFormat(new Date(now)), handleData)
-            : provider.reports.social_realtime(uiSelected.profile.id, handleData)
-        ;
+        if (!ui.chRealtime.node().checked) {
+            provider.reports.social(uiSelected.profile.id, reqFormat(new Date(old)), reqFormat(new Date(now)), handleData);
+        } else {
+            provider.reports.social_realtime(uiSelected.profile.id, handleData);
+        }
     }
 }
+
+
 
 ui.buttons.run.on('click', function() {
 
@@ -356,12 +358,35 @@ ui.buttons.run.on('click', function() {
     runClick();
 });
 
-function clickProfile(d) {
-    uiSelected.profile = d;
+var rqId;
+function filterChild(d) {
+    return d.visible && d.parent && d.parent.y > 0;
+}
+function rending() {
+
+    rqId = global.requestAnimationFrame(rending, undefined);
+
+    var n = physics.nodes().filter(filterChild);
+
+    if (!ctx || valid || !n || !n.length) {
+        return;
+    }
+
+    valid = true;
+
+    ctx.save();
+    ctx.clearRect(0, 0, size[0], size[1]);
+
+    ctx.drawImage(graphic.draw(n), 0, 0);
+    ctx.restore();
+
+    valid = false;
 }
 
 processor.on('start', function() {
-    if (!rqId) rending();
+    if (!rqId) {
+        rending();
+    }
     resize();
 });
 
@@ -379,11 +404,16 @@ processor.on('tick', function(items, l, r) {
     progress.inc(l, r);
 });
 
-processor.on('calc', function (d) {
-    if (!processor.IsRun())
-        return;
+function getVisible(d) {
+    return !!d.opacity;
+}
 
-    p = d.from.socialNetwork;
+processor.on('calc', function (d) {
+    if (!processor.IsRun()) {
+        return;
+    }
+
+    var p = d.from.socialNetwork;
 
     if (d.fixed) {
         d.x = +p.x;
@@ -404,11 +434,12 @@ processor.on('calc', function (d) {
 
     d.visible = getVisible(d);
 
-    physics && physics.nodes(state.data.filter(filterChild)).start();
+    if (physics) {
+        physics.nodes(state.data.filter(filterChild)).start();
+    }
 });
 
-var temp = 3600 * 1000;
-processor.on('calcrightbound', function(l) {
+processor.on('calcrightbound', function() {
     processor.leftBound += temp;
 });
 
@@ -417,15 +448,6 @@ processor.on('filter', function(l, r) {
         return d.date >= l && d.date < r;
     });
 });
-
-function getVisible(d) {
-    return !!d.opacity;
-}
-
-function filterChild(d) {
-    d.parent && console.log(d.parent.y);
-    return d.visible && d.parent && d.parent.y > 0;
-}
 
 /**
  * rAF & cAF
@@ -439,7 +461,7 @@ function filterChild(d) {
             window[vendors[x]+'CancelAnimationFrame'] || window[vendors[x]+'CancelRequestAnimationFrame'];
     }
 
-    if (!window.requestAnimationFrame)
+    if (!window.requestAnimationFrame) {
         window.requestAnimationFrame = function(callback/*, element*/) {
             var currTime = new Date().getTime();
             var timeToCall = Math.max(0, 16 - (currTime - lastTime));
@@ -448,15 +470,16 @@ function filterChild(d) {
             lastTime = currTime + timeToCall;
             return id;
         };
+    }
 
-    if (!window.cancelAnimationFrame)
+    if (!window.cancelAnimationFrame) {
         window.cancelAnimationFrame = function(id) {
             clearTimeout(id);
         };
+    }
 })();
 
 var valid = false
-    , rqId
     , canvas = d3.select('#canvas').append('canvas')
         .text('This browser don not support element type of Canvas.')
         .attr('width', size[0])
@@ -466,26 +489,6 @@ var valid = false
         .node()
     , ctx = canvas.getContext('2d')
     ;
-
-function rending() {
-
-    rqId = requestAnimationFrame(rending, undefined);
-
-    var n = physics.nodes().filter(filterChild);
-
-    if (!ctx || valid || !n || !n.length)
-        return;
-
-    valid = true;
-
-    ctx.save();
-    ctx.clearRect(0, 0, size[0], size[1]);
-
-    ctx.drawImage(graphic.draw(n), 0, 0);
-    ctx.restore();
-
-    valid = false;
-}
 
 function resize() {
     size = [

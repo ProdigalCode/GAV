@@ -1,9 +1,10 @@
 var d3 = require('../node_modules/d3/d3.min');
-const delay = 1000;
+var delay = 1000;
 
 function asyncForEach(items, fn, time) {
-    if (!(items instanceof Array))
+    if (!(items instanceof Array)) {
         return;
+    }
 
     var workArr = items.concat();
 
@@ -21,12 +22,6 @@ var pause
     , tempTimeout
     ;
 
-var processor = {
-    killWorker : killWorker
-};
-
-var dispatch = d3.dispatch("start", 'stop', 'finish', 'tick', 'calc', 'error', 'filter', 'calcrightbound');
-
 function killWorker() {
     if (worker) {
         clearInterval(worker);
@@ -39,10 +34,19 @@ function killWorker() {
     }
 }
 
+var processor = {
+    killWorker : killWorker
+};
+
+var dispatch = d3.dispatch('start', 'stop', 'finish', 'tick', 'calc', 'error', 'filter', 'calcrightbound');
+
+
+
 var boundRange = [0, 0];
 processor.bounds = function(bounds) {
-    if (!arguments.length || !(bounds instanceof Array))
+    if (!arguments.length || !(bounds instanceof Array)) {
         return boundRange;
+    }
     boundRange = bounds;
     return processor;
 };
@@ -59,8 +63,9 @@ function loop() {
         return;
     }
 
-    if (pause)
+    if (pause) {
         return;
+    }
 
     var dl, dr;
 
@@ -72,7 +77,9 @@ function loop() {
 
     var visTurn = processor.items;
 
-    visTurn && visTurn.length && asyncForEach(visTurn, dispatch.calc, delay / (visTurn.length || delay));
+    if (visTurn && visTurn.length) {
+        asyncForEach(visTurn, dispatch.calc, delay / (visTurn.length || delay));
+    }
 
     dispatch.tick.call(processor, visTurn, dl, dr);
 
@@ -81,7 +88,6 @@ function loop() {
         dispatch.finish.call(processor, dl, dr);
     } else {
         if (!visTurn || !visTurn.length) {
-            //loop();
             tempTimeout = setTimeout(loop, 1);
         }
     }

@@ -7,11 +7,10 @@ var gutil = require('gulp-util');
 var browserify = require('gulp-browserify');
 var livereload = require('gulp-livereload');
 var map = require('map-stream');
-
+var uglify = require('gulp-uglify');
 
 // Basic usage
 gulp.task('scripts', function() {
-    // Single entry point to browserify
     gulp.src('scripts/main.js')
         .pipe(browserify({
           debug : true
@@ -51,8 +50,13 @@ gulp.task('lint', function() {
         process.exit(1);
       }
     });
-    // .pipe(jshint.reporter('fail'))
 });
 
+gulp.task('build', function() {
+  return gulp.src('scripts/main.js')
+      .pipe(browserify().on('error', gutil.log))
+      .pipe(uglify())
+      .pipe(gulp.dest('./build'));
+});
 
 gulp.task('default', ['scripts', 'watch', 'connect']);

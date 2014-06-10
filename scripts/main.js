@@ -2,7 +2,7 @@ var d3 = require('../node_modules/d3/d3.min')
     , gaapi = require('./gaapi')
     , processor = require('./processor')
     , physics = require('./physics')
-    , graphic = require('./graphic')
+    , graphic = require('./graphics/canvas')
     , prbr = require('./prbr')
     , getData = require('./gendata')
     ;

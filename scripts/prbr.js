@@ -57,14 +57,16 @@ module.exports = function(node, w, h) {
         , hashOnAction = {}
         , utils = {
             isFun : function (a) {
-                return typeof a === "function";
+                return typeof a === 'function';
             },
             func : function (obj, key) {
                 return function(arg) {
-                    if(!arguments.length)
+                    if(!arguments.length) {
                         return obj[key].value;
-                    utils.isFun(arg) &&
-                    (obj[key].value = arg);
+                    }
+                    if (utils.isFun(arg)) {
+                        obj[key].value = arg;
+                    }
                     return obj;
                 };
             },
@@ -87,46 +89,53 @@ module.exports = function(node, w, h) {
         , label = 'max: '
 
         , offsetEvent = 16
-        , maxLineEvent
         , dfEvent = d3.format('')
         , labelEvent = 'max: '
         ;
 
     that.maxLabelValue = function(value) {
-        if (!arguments.length)
+        if (!arguments.length) {
             return label;
+        }
         label = value;
         return that;
     };
 
     that.maxFormatValue = function(value) {
-        if (!arguments.length)
+        if (!arguments.length) {
             return df;
+        }
         df = value;
         return that;
     };
 
     that.maxLabelEvent = function(value) {
-        if (!arguments.length)
+        if (!arguments.length) {
             return labelEvent;
+        }
         labelEvent = value;
         return that;
     };
 
     that.maxFormatEvent = function(value) {
-        if (!arguments.length)
+        if (!arguments.length) {
             return dfEvent;
+        }
         dfEvent = value;
         return that;
     };
 
     that.on = function(key, value) {
-        if (!key || !(typeof key === 'string'))
+        if (!key || (typeof key !== 'string')){
             return that;
+        }
         key = key.toLowerCase();
-        if (arguments.length < 2)
+        if (arguments.length < 2) {
             return utils.isFun(hashOnAction[key]) ? hashOnAction[key]() : undefined;
-        utils.isFun(hashOnAction[key]) && hashOnAction[key](value);
+        }
+        if (utils.isFun(hashOnAction[key])) {
+            hashOnAction[key](value);
+        }
         return that;
     };
 
@@ -136,26 +145,27 @@ module.exports = function(node, w, h) {
     });
 
     function doFunc(key) {
-        if (!key || !(typeof key === 'string'))
+        if (!key || (typeof key !== 'string')) {
             return that;
+        }
         key = key.toLowerCase();
         return utils.getFun(hashOnAction, key);
     }
 
     function interpolateSankey(points) {
         var x0 = points[0][0], y0 = points[0][1], x1, y1, x2,
-            path = [x0, ",", y0],
+            path = [x0, ',', y0],
             i = 0,
             n = points.length;
         while (++i < n) {
             x1 = points[i][0];
             y1 = points[i][1];
             x2 = (x0 + x1) / 2;
-            path.push("C", x2, ",", y0, " ", x2, ",", y1, " ", x1, ",", y1);
+            path.push('C', x2, ',', y0, ' ', x2, ',', y1, ' ', x1, ',', y1);
             x0 = x1;
             y0 = y1;
         }
-        return path.join("");
+        return path.join('');
     }
 
     function initialize(data) {
@@ -175,7 +185,7 @@ module.exports = function(node, w, h) {
         yScale = d3.scale.linear().range([size[1] - offset, 0]);
         yScaleII = d3.scale.linear().range([size[1] - offset - offsetEvent, 0]);
 
-        xAxis = d3.svg.axis().scale(xScale).orient("bottom");
+        xAxis = d3.svg.axis().scale(xScale).orient('bottom');
 
         brush = d3.svg.brush()
             .x(xScale)
@@ -198,28 +208,28 @@ module.exports = function(node, w, h) {
         yScale.domain([0, d3.max(data.map(function(d) { return doFunc('getAxisYValue')(d); })) || 0]);
         yScaleII.domain([0, d3.max(data.map(function(d) { return doFunc('getAxisYEvent')(d); })) || 0]);
 
-        context = layer.append("g")
-            .attr("class", "context")
-            .attr("transform", "translate(" + that.setting.margin.left + "," + that.setting.margin.top + ")");
+        context = layer.append('g')
+            .attr('class', 'context')
+            .attr('transform', 'translate(' + that.setting.margin.left + ',' + that.setting.margin.top + ')');
 
-        context.append("path")
+        context.append('path')
             .datum(data)
-            .attr("class", "area");
+            .attr('class', 'area');
 
-        context.append("path")
+        context.append('path')
             .datum(data)
             .attr('transform', 'translate(0, ' + offsetEvent + ')')
-            .attr("class", "areaEvent");
+            .attr('class', 'areaEvent');
 
-        context.append("g")
-            .attr("class", "x axis");
+        context.append('g')
+            .attr('class', 'x axis');
 
-        gBrush = context.append("g")
-            .attr("class", "x brush")
+        gBrush = context.append('g')
+            .attr('class', 'x brush')
             .call(brush);
 
         gBrush
-            .selectAll("rect");
+            .selectAll('rect');
 
         maxLine = context.append('g')
             .attr('class', 'maxline');
@@ -278,10 +288,6 @@ module.exports = function(node, w, h) {
         area.y0(size[1] - offset);
         areaII.y0(size[1] - offset - offsetEvent);
 
-        var ymax = -yScale(yScale.domain()[1] || 0)
-            , ymaxII = -yScaleII(yScaleII.domain()[1] || 0)
-            ;
-
         //maxLine.style('display', (-ymax == (size[1] - offset)) ? 'none' : null);
         maxLine.attr('transform', 'translate(0, 0)');
         maxLine.selectAll('path')
@@ -293,33 +299,37 @@ module.exports = function(node, w, h) {
             .attr('d', 'M0,1V0H' + size[0] + 'V1');
 
         context.selectAll('.area')
-            .attr("d", area);
+            .attr('d', area);
 
         context.selectAll('.areaEvent')
-            .attr("d", areaII);
+            .attr('d', areaII);
 
         context.selectAll('g.x.axis')
-            .attr("transform", "translate(0," + (size[1] - offset) + ")")
+            .attr('transform', 'translate(0,' + (size[1] - offset) + ')')
             .call(xAxis);
 
-        gBrush.selectAll("rect")
-            .attr("height", size[1]);
+        gBrush.selectAll('rect')
+            .attr('height', size[1]);
     }
 
     that.size = function(x, y) {
         switch (arguments.length) {
             case 0: return size;
             case 1:
-                if (x instanceof Array)
+                if (x instanceof Array) {
                     size = x;
-                else
+                }
+                else {
                     size = [x, x];
+                }
                 break;
             default :
-                if (x instanceof Array)
+                if (x instanceof Array){
                     size = x;
-                else
+                }
+                else {
                     size = [x, y];
+                }
                 break;
         }
 

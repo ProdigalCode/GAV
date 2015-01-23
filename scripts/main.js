@@ -322,6 +322,7 @@ function handleData(err, data) {
 
 function runClick() {
     document.getElementById('spinner').style['display'] = '';
+    if (location.search !== '?demo' || state.demo)
     if (!uiSelected.profile)
         return;
 
@@ -331,6 +332,7 @@ function runClick() {
 
     if (location.search === '?demo' && !state.demo) {
         handleData(null, getData(200));
+        state.demo = true;
     }
     else {
         !ui.chRealtime.node().checked

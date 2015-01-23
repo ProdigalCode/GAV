@@ -323,9 +323,9 @@ function handleData(err, data) {
 }
 function runClick() {
     document.getElementById('spinner').style['display'] = '';
-    if (!uiSelected.profile) {
+    if (location.search !== '?demo' || state.demo)
+    if (!uiSelected.profile)
         return;
-    }
 
     var now = Date.now()
         , old = now - (14 * 24 * 60 * 60 * 100)
@@ -333,6 +333,7 @@ function runClick() {
 
     if (global.location.search === '?demo' && !state.demo) {
         handleData(null, getData(200));
+        state.demo = true;
     }
     else {
         if (!ui.chRealtime.node().checked) {
